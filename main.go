@@ -3,16 +3,39 @@ package main
 import (
 	"fmt"
 	"io"
-	"net/http"
+	"os"
+	"time"
 )
 
-func Greet(writer io.Writer, name string) {
-	fmt.Fprintf(writer, "Hello, %s", name)
+const (
+	finalWord      = "Go!"
+	countdownStart = 3
+)
+
+type Sleeper interface {
+	Sleep()
 }
 
-func MyGreeterHandler(w http.ResponseWriter, r *http.Request) {
-	Greet(w, "world")
+type sleep struct {
 }
+type ConfigurableSleeper struct {
+	duration time.Duration
+	sleep    func(time.Duration)
+}
+
+func (s *sleep) Sleep() {
+	time.Sleep(1 * time.Second)
+}
+
+func Countdown(out io.Writer, s Sleeper) {
+	for i := countdownStart; i > 0; i-- {
+		s.Sleep()
+		fmt.Fprintln(out, i)
+	}
+	s.Sleep()
+	fmt.Fprint(out, finalWord)
+}
+
 func main() {
-	http.ListenAndServe(":5000", http.HandlerFunc(MyGreeterHandler))
+	Countdown(os.Stdout, &sleep{})
 }
